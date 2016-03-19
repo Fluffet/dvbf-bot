@@ -17,16 +17,31 @@ class IRCClient(object):
     def send(self, data):
         self.socket.send( (data + "\r\n").encode() )
     
-    def read_lines(self):
+    def read_buffer_lines(self):
         buffer = ""
         while True:
             if "\r\n" not in buffer:
                 buffer += self.socket.recv(512).decode("utf-8")
             line, buffer = buffer.split("\r\n", maxsplit=1)
             yield line
+    def join_channel(self, channel_name):
+        client.send("JOIN " + channel_name)
+
+        # Announce yourself!
+
+        client.send("PRIVMSG #reddit-dailyprogrammer :Hello world..?")
 
 client = IRCClient("dvbf-bot","dvbf-bot","dvbf-bot")
 client.connect("chat.freenode.net:6667")
 
-for line in client.read_lines():
+# Main loop
+for line in client.read_buffer_lines():
     print(line)
+    
+    if line[0] == "PING":
+        client.send("PONG" +line[1])
+
+    if line == ":{0} MODE {0} :+i".format(client.username):
+        client.join_channel("#reddit-dailyprogrammer")
+    
+
