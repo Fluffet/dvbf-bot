@@ -16,7 +16,7 @@ class IRCEvent(object):
         self.message = ""
         self.event_type = m.group(2)
 
-        if self.event_type == "PRIVMSG":
+        if self.event_type == "PRIVMSG" or self.event_type == "JOIN":
             self.channel = m.group(3)
             self.nick = m.group(1).split("!")[1][1:]
             self.host = m.group(1).split("@")[1]
@@ -67,7 +67,7 @@ client.connect("chat.freenode.net:6667")
 def main():
     for line in client.read_buffer_lines():
         event = IRCEvent(line)
-        #print(line)
+        
         if event.event_type == "PRIVMSG":
            event.parse_privmsg()
         elif event.event_type == "JOIN":
