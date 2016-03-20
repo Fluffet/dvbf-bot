@@ -1,4 +1,38 @@
 import socket
+import re
+import random
+import time
+# TODO: Imp module loading commands
+
+channels = ["#fluffet"]
+
+class IRCEvent(object):
+    def __init__(self, line):
+        m = re.search('^(?:[:](\S+) )?(\S+)(?: (?!:)(.+?))?(?: [:](.+))?$', line)
+        self.raw_line = line
+        self.host = ""
+        self.channel = ""
+        self.nick = ""
+        self.message = ""
+        self.event_type = m.group(2)
+
+        if self.event_type == "PRIVMSG":
+            self.channel = m.group(3)
+            self.nick = m.group(1).split("!")[1][1:]
+            self.host = m.group(1).split("@")[1]
+        
+        if self.event_type == "PRIVMSG":
+            self.message = m.group(4)
+
+    def parse_privmsg(self):
+        if self.message == "who's a good bot?":
+            self.reply("me!")
+
+    def parse_join(self):
+        return
+
+    def reply(self,message):
+            client.send("PRIVMSG {0} :".format(self.channel) + message)
 
 class IRCClient(object):
     def __init__(self, username, nickname=None, realname=None):
@@ -6,7 +40,7 @@ class IRCClient(object):
         self.nickname = nickname or username
         self.real_name = realname or username
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-
+        self._can_join_channels_yet = False
     def connect(self, host):
         host, port = host.split(":")
         port = int(port)
@@ -27,21 +61,28 @@ class IRCClient(object):
     def join_channel(self, channel_name):
         client.send("JOIN " + channel_name)
 
-        # Announce yourself!
-
-        client.send("PRIVMSG #reddit-dailyprogrammer :Hello world..?")
-
 client = IRCClient("dvbf-bot","dvbf-bot","dvbf-bot")
 client.connect("chat.freenode.net:6667")
 
-# Main loop
-for line in client.read_buffer_lines():
-    print(line)
+def main():
+    for line in client.read_buffer_lines():
+        event = IRCEvent(line)
+        #print(line)
+        if event.event_type == "PRIVMSG":
+           event.parse_privmsg()
+        elif event.event_type == "JOIN":
+            event.parse_join()
     
-    if line[0] == "PING":
-        client.send("PONG" +line[1])
-
-    if line == ":{0} MODE {0} :+i".format(client.username):
-        client.join_channel("#reddit-dailyprogrammer")
+        # Reply to PING to not get disconnected
+        if line[0] == "PING":
+            client.send("PONG" +line[1])
+        # This string comp is unnecessary to do all the time
+        elif not client._can_join_channels_yet:
+            if line == ":{0} MODE {0} :+i".format(client.username):
+                client._can_join_channels_yet = True
+                for channel in channels:
+                    client.join_channel(channel)
+                    time.sleep(1)
     
-
+if __name__ == '__main__':
+    main()
