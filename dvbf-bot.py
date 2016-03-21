@@ -5,8 +5,6 @@ import threading
 import os
 import imp
 
-# TODO: Imp module loading commands
-
 channels = ["#fluffet"]
 nickname = "dvbf-bot"
 irc_server = "chat.freenode.net:6667"
