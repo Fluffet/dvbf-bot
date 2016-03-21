@@ -11,7 +11,6 @@ channels = ["#fluffet"]
 nickname = "dvbf-bot"
 irc_server = "chat.freenode.net:6667"
 
-
 class DynamicCommandFileLoader(object):
     """This class loads commands once every (delay=60) without having to restart the bot"""
     
@@ -105,7 +104,7 @@ def main():
         event = IRCEvent(line)
         
         for command,imported_module in command_loader.loaded_commands.items():
-            executed = imported_module.execute(client, event)
+            executed = imported_module.execute(client, event, command_loader)
             if executed:
                 break
                 
