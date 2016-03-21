@@ -1,12 +1,49 @@
 import socket
 import re
-import random
 import time
+import threading
+import os
+import imp
+
 # TODO: Imp module loading commands
 
 channels = ["#fluffet"]
+nickname = "dvbf-bot"
+irc_server = "chat.freenode.net:6667"
+
+
+class DynamicCommandFileLoader(object):
+    """This class loads commands once every (delay=60) without having to restart the bot"""
+    
+    def __init__(self):
+        self.loaded_commands = {} 
+        self.worker_thread = threading.Thread(target=self.reload_loop)
+        self.worker_thread.daemon = True
+        self.worker_thread.start()
+
+        print("Init Dynamic")
+
+    def scan_commands(self):
+        for command in os.listdir("commands/"):
+            if command.endswith('.py'):
+                self.import_command(command)
+    
+    def import_command(self,command):
+        src = imp.load_source(command, "commands/" + command)
+        self.loaded_commands[command] = src
+        print("Imported: " + command)
+    
+    def reload_loop(self,delay=20):
+        while True:
+            print("Reloaded commands")
+            self.scan_commands()
+            
+            time.sleep(delay)
 
 class IRCEvent(object):
+    """Base class to represent all IRC events from the server, by accessing event_type
+    you can find out what it is and then access the proper members"""
+    
     def __init__(self, line):
         m = re.search('^(?:[:](\S+) )?(\S+)(?: (?!:)(.+?))?(?: [:](.+))?$', line)
         self.raw_line = line
@@ -24,17 +61,12 @@ class IRCEvent(object):
         if self.event_type == "PRIVMSG":
             self.message = m.group(4)
 
-    def parse_privmsg(self):
-        if self.message == "who's a good bot?":
-            self.reply("me!")
-
-    def parse_join(self):
-        return
-
     def reply(self,message):
             client.send("PRIVMSG {0} :".format(self.channel) + message)
 
 class IRCClient(object):
+    """Base class to interact with the IRC server"""
+
     def __init__(self, username, nickname=None, realname=None):
         self.username = username
         self.nickname = nickname or username
@@ -52,6 +84,8 @@ class IRCClient(object):
         self.socket.send( (data + "\r\n").encode() )
     
     def read_buffer_lines(self):
+        """ This is an infinite buffer line generator, 
+        it reads from the server and returns complete lines """
         buffer = ""
         while True:
             if "\r\n" not in buffer:
@@ -61,17 +95,20 @@ class IRCClient(object):
     def join_channel(self, channel_name):
         client.send("JOIN " + channel_name)
 
-client = IRCClient("dvbf-bot","dvbf-bot","dvbf-bot")
-client.connect("chat.freenode.net:6667")
+command_loader = DynamicCommandFileLoader()
+
+client = IRCClient(nickname,nickname,nickname)
+client.connect(irc_server)
 
 def main():
     for line in client.read_buffer_lines():
         event = IRCEvent(line)
         
-        if event.event_type == "PRIVMSG":
-           event.parse_privmsg()
-        elif event.event_type == "JOIN":
-            event.parse_join()
+        for command,imported_module in command_loader.loaded_commands.items():
+            executed = imported_module.execute(client, event)
+            if executed:
+                break
+                
     
         # Reply to PING to not get disconnected
         if line[0] == "PING":
