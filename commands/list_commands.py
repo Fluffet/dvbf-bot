@@ -1,9 +1,9 @@
 def execute(client, event, command_loader, log=None):
     if event.event_type == "PRIVMSG":
         if event.message == "dvbf-bot.commands":
-            s = "My commands: "
+            s = "Usage: dvbf-bot.command | My commands:"
             for command, module in command_loader.loaded_commands.items():
-                s.append( " " + module.usage() )
+                s += " " + module.usage()
             
             event.reply(s)
             return True

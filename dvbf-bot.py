@@ -111,7 +111,7 @@ def main():
     
         # Reply to PING to not get disconnected
         if line[0] == "PING":
-            client.send("PONG" +line[1])
+            client.send("PONG" +line.split(" ")[1])
         # This string comp is unnecessary to do all the time
         elif not client._can_join_channels_yet:
             if line == ":{0} MODE {0} :+i".format(client.username):
