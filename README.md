@@ -9,7 +9,8 @@ The two base classes, IRCClient and IRCEvent should be pretty self documenting. 
 
 To create a plugin, just follow the structure of the already existing ones. Since they are seperate files, you can do your own imports and "advanced" plugins that do whatever you want.
 
+If your plugin has executed its function properly, its execute() function should return "True". This will prevent the bot from looking through all the other commands if there is something to execute. If it doesn't execute, just return False instead.
+
 ###TODO: 
   - Make it learn to imitate others by parsing logs with Markov chaining
   - Some sort of exception handling for crashing plugins, and write error message if these are executed
-
