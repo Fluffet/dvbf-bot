@@ -5,7 +5,7 @@ import threading
 import os
 import imp
 
-channels = ["#fluffet"]
+channels = ["#reddit-dailyprogrammer"]
 nickname = "dvbf-bot"
 irc_server = "chat.freenode.net:6667"
 
@@ -15,10 +15,7 @@ class DynamicCommandFileLoader(object):
     def __init__(self):
         self.loaded_commands = {} 
         self.worker_thread = threading.Thread(target=self.reload_loop)
-        self.worker_thread.daemon = True
         self.worker_thread.start()
-
-        print("Init Dynamic")
 
     def scan_commands(self):
         for command in os.listdir("commands/"):
@@ -32,7 +29,6 @@ class DynamicCommandFileLoader(object):
     
     def reload_loop(self,delay=20):
         while True:
-            print("Reloaded commands")
             self.scan_commands()
             
             time.sleep(delay)
