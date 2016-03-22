@@ -5,7 +5,7 @@ import threading
 import os
 import imp
 
-channels = ["#reddit-dailyprogrammer"]
+channels = ["#fluffet"]
 nickname = "dvbf-bot"
 irc_server = "chat.freenode.net:6667"
 
@@ -98,7 +98,11 @@ def main():
         event = IRCEvent(line)
         
         for command,imported_module in command_loader.loaded_commands.items():
-            executed = imported_module.execute(client, event, command_loader)
+            try:
+                executed = imported_module.execute(client, event, command_loader)
+            except Exception as e:
+                event.reply("Error detected:  '{}': {}".format(command, str(e)))
+                break
             if executed:
                 break
                 
